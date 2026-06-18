@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control N°5 – Introducción al Derecho</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a0533; color: #fff; min-height: 100vh; }
+
+  #screen-select { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  #screen-select h1 { font-size: 2rem; color: #f7c948; text-align: center; margin-bottom: 8px; }
+  #screen-select p { color: #ccc; margin-bottom: 30px; text-align: center; }
+  .grupo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; max-width: 600px; }
+  .grupo-btn { background: linear-gradient(135deg, #6c3fc5, #9b59e8); border: none; color: #fff; font-size: 1.3rem; font-weight: bold; padding: 28px 10px; border-radius: 16px; cursor: pointer; transition: transform .15s, box-shadow .15s; box-shadow: 0 4px 15px rgba(0,0,0,.4); }
+  .grupo-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.5); }
+  .grupo-btn.done { background: #444; cursor: not-allowed; opacity: .6; }
+  .grupo-btn.done::after { content: ' ✓'; }
+
+  #screen-quiz { display: none; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; }
+  .quiz-header { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .grupo-label { background: #6c3fc5; padding: 6px 18px; border-radius: 20px; font-weight: bold; font-size: 1rem; }
+  .progress-label { color: #ccc; font-size: .95rem; }
+  .timer-bar-wrap { width: 100%; max-width: 800px; height: 12px; background: #333; border-radius: 6px; margin-bottom: 18px; overflow: hidden; }
+  .timer-bar { height: 100%; background: linear-gradient(90deg, #f7c948, #e05c2a); border-radius: 6px; transition: width 1s linear; }
+  .question-card { background: #2a1050; border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 800px; margin-bottom: 20px; }
+  .question-num { color: #f7c948; font-size: .85rem; font-weight: bold; margin-bottom: 8px; }
+  .question-text { font-size: 1.15rem; line-height: 1.5; }
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 800px; }
+  .opt-btn { background: #3a1a70; border: 2px solid transparent; color: #fff; font-size: 1rem; padding: 18px 16px; border-radius: 14px; cursor: pointer; text-align: left; transition: background .15s, border-color .15s; line-height: 1.4; }
+  .opt-btn:hover:not(:disabled) { background: #5a2fa0; border-color: #9b59e8; }
+  .opt-btn.selected { border-color: #f7c948; background: #4a2580; }
+  .opt-btn:disabled { opacity: .7; cursor: default; }
+  .opt-btn.correct { background: #1a7a3a !important; border-color: #2ecc71 !important; }
+  .opt-btn.wrong { background: #7a1a1a !important; border-color: #e74c3c !important; }
+  .opt-letter { display: inline-block; background: rgba(255,255,255,.15); border-radius: 6px; padding: 2px 8px; margin-right: 8px; font-weight: bold; font-size: .9rem; }
+  .nav-row { display: flex; gap: 12px; margin-top: 8px; }
+  .nav-btn { background: #6c3fc5; border: none; color: #fff; font-size: 1rem; font-weight: bold; padding: 14px 32px; border-radius: 12px; cursor: pointer; }
+  .nav-btn:hover { background: #8a55e0; }
+  .nav-btn.finish { background: #e05c2a; }
+  .nav-btn.finish:hover { background: #f07040; }
+  .timer-text { color: #f7c948; font-size: 1.1rem; font-weight: bold; }
+
+  #screen-result { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center; }
+  #screen-result h2 { font-size: 2rem; color: #f7c948; margin-bottom: 10px; }
+  .result-score { font-size: 5rem; font-weight: bold; color: #fff; margin: 20px 0; }
+  .result-detail { color: #ccc; font-size: 1.1rem; margin-bottom: 30px; }
+  .result-locked { background: #2a1050; border-radius: 16px; padding: 20px 30px; color: #aaa; font-size: 1rem; margin-bottom: 20px; max-width: 500px; }
+  .resultado-bloqueado-icon { font-size: 3rem; margin-bottom: 10px; }
+
+  #screen-locked { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center; }
+  #screen-locked h2 { font-size: 2rem; color: #e05c2a; margin-bottom: 16px; }
+  #screen-locked p { color: #ccc; font-size: 1.1rem; }
+
+  .waiting-msg { color: #aaa; font-size: .95rem; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div id="screen-select">
+  <h1>🎓 Control N° 5</h1>
+  <p>Introducción al Derecho · Prof. Andrés Talavera Cano<br>Selecciona tu grupo para comenzar</p>
+  <div class="grupo-grid" id="grupo-grid"></div>
+  <p class="waiting-msg">Cada grupo tiene un solo intento. El solucionario se revela cuando los 6 grupos terminan.</p>
+</div>
+
+<div id="screen-quiz">
+  <div class="quiz-header">
+    <span class="grupo-label" id="quiz-grupo-label">Grupo 1</span>
+    <span class="timer-text" id="timer-text">2:00</span>
+    <span class="progress-label" id="progress-label">1 / 10</span>
+  </div>
+  <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+  <div class="question-card">
+    <div class="question-num" id="q-num">Pregunta 1 de 10</div>
+    <div class="question-text" id="q-text"></div>
+  </div>
+  <div class="options-grid" id="options-grid"></div>
+  <div class="nav-row">
+    <button class="nav-btn" id="btn-next" onclick="nextQuestion()">Siguiente ▶</button>
+    <button class="nav-btn finish" id="btn-finish" style="display:none" onclick="finishQuiz()">Finalizar ✓</button>
+  </div>
+</div>
+
+<div id="screen-result">
+  <h2 id="result-grupo-title">Grupo 1</h2>
+  <div class="result-score" id="result-score">00/20</div>
+  <div class="result-detail" id="result-detail"></div>
+  <div class="result-locked">
+    <div class="resultado-bloqueado-icon">🔒</div>
+    <strong>Solucionario bloqueado</strong><br>
+    Las respuestas correctas se revelarán cuando los 6 grupos hayan completado el control.
+  </div>
+</div>
+
+<div id="screen-locked">
+  <h2>⛔ Acceso bloqueado</h2>
+  <p>Este grupo ya completó su intento.<br>Espera que el profesor revele el solucionario.</p>
+</div>
+
+<script>
+const FIREBASE_URL = "https://kahoot-cl4-default-rtdb.firebaseio.com";
+const TS = Date.now() % 100000;
+
+const QUESTIONS = [
+  { text: "¿Cómo se ejercía el poder en la Antigüedad?", opts: ["Basado en la estructura política de Estados y alianzas.","Por quienes obtenían una combinación de talento personal y acumulación de fuerza social en un momento determinado.","Por medio de un sistema de elecciones democráticas.","Ninguna de las anteriores."], correct: 1 },
+  { text: "La diferencia principal entre Estado y Gobierno es que:", opts: ["El Gobierno es una estructura permanente y el Estado una temporal.","El Estado tiene un conjunto de órganos, normas y principios, que trascienden gobiernos y épocas; mientras que el Gobierno es la capacidad de mando, volátil y por la simple fuerza.","No hay diferencia.","Ninguna de las anteriores."], correct: 1 },
+  { text: "¿Qué papel tuvo la Iglesia en el Medioevo?", opts: ["La Iglesia se ocupó de regular únicamente a la comunidad católica.","Desarrolló un derecho canónico con influencia en diversos aspectos temporales, actuando como guía espiritual.","No influyó en las reglas sociales.","Fue opositora al sistema feudal."], correct: 1 },
+  { text: "¿Por qué se afirma que en el Medioevo se sentaron las bases de los Estados Nación?", opts: ["Por la consolidación del poder feudal.","Por la centralización del poder en la Iglesia.","Por la progresiva diferenciación entre los pueblos por su propia cultura, surgiendo las identidades nacionales.","Porque no hubo ningún tipo de estructura política clara."], correct: 2 },
+  { text: "La Carta Magna fue relevante porque:", opts: ["Estableció un sistema de leyes absolutas.","Permitió que el rey dictara leyes sin restricciones.","Sentó las bases de la protección judicial de la libertad personal, determinando que la ley estaba sobre el rey y éste aceptaba ciertas reglas de gobierno.","Todas las anteriores."], correct: 2 },
+  { text: "La importancia de Montesquieu radica en:", opts: ["Su rechazo a cualquier forma de separación de poderes.","Su influencia en la centralización del poder estatal.","La formulación de la teoría de la separación de poderes.","Las ideas revolucionarias plasmadas en su obra \"El Contrato Social\"."], correct: 2 },
+  { text: "Rousseau contribuyó al Estado contemporáneo al plantear:", opts: ["La abolición de la democracia representativa.","La idea del contrato social y la soberanía popular.","La centralización del poder en un monarca absoluto.","La promoción de la representación democrática del pueblo, a partir de su obra \"Del Espíritu de las Leyes\"."], correct: 1 },
+  { text: "El Tercer Estado, según el Conde de Sieyes, era importante porque:", opts: ["Representaba a la aristocracia.","Representaba una estructura estatal y política diversa, cercana a la monarquía.","Constituía la mayor parte de la nación y sostenía su vida económica.","Fue creado para fortalecer el régimen presidencialista."], correct: 2 },
+  { text: "La Declaración de Derechos del Hombre y del Ciudadano estableció:", opts: ["La limitación de libertades para la clase baja.","Los principios liberales de libertad, igualdad, seguridad, resistencia a la opresión y propiedad.","Un régimen autoritario.","Una serie de principios liberales vinculados exclusivamente con las tareas del Ejecutivo y Legislativo, como centros de poder."], correct: 1 },
+  { text: "En Estados Unidos, la Constitución de 1787 tuvo dos aportes fundamentales:", opts: ["Fue la base para un gobierno monárquico y diseñó un régimen descentralizado.","El de la estructura del Estado Federal y el régimen presidencial.","Eliminó cualquier tipo de control judicial y otorgó al Presidente poderes ilimitados.","Regular las relaciones comerciales y las divisiones políticas entre/de los Estados Federados."], correct: 1 }
+];
+
+const LETTERS = ['a','b','c','d'];
+const TIEMPO = 120;
+
+let currentGrupo = null;
+let currentQ = 0;
+let answers = [];
+let timerInterval = null;
+let secondsLeft = TIEMPO;
+
+async function init() {
+  const grid = document.getElementById('grupo-grid');
+  grid.innerHTML = '';
+  for (let g = 1; g <= 6; g++) {
+    const btn = document.createElement('button');
+    btn.className = 'grupo-btn';
+    btn.id = `gbtn-${g}`;
+    btn.textContent = `Grupo ${g}`;
+    btn.onclick = () => selectGrupo(g);
+    grid.appendChild(btn);
+  }
+  await refreshDoneGroups();
+}
+
+async function refreshDoneGroups() {
+  try {
+    const r = await fetch(`${FIREBASE_URL}/control5/grupos.json?nocache=${TS}`);
+    const data = await r.json();
+    if (!data) return;
+    for (let g = 1; g <= 6; g++) {
+      if (data[`grupo${g}`] !== undefined) {
+        const btn = document.getElementById(`gbtn-${g}`);
+        btn.classList.add('done');
+        btn.disabled = true;
+      }
+    }
+  } catch(e) {}
+}
+
+async function selectGrupo(g) {
+  try {
+    const r = await fetch(`${FIREBASE_URL}/control5/grupos/grupo${g}.json?nocache=${TS}`);
+    const data = await r.json();
+    if (data !== null) { showScreen('screen-locked'); return; }
+  } catch(e) {}
+  currentGrupo = g;
+  currentQ = 0;
+  answers = new Array(QUESTIONS.length).fill(null);
+  showScreen('screen-quiz');
+  document.getElementById('quiz-grupo-label').textContent = `Grupo ${g}`;
+  loadQuestion();
+}
+
+function loadQuestion() {
+  const q = QUESTIONS[currentQ];
+  document.getElementById('q-num').textContent = `Pregunta ${currentQ + 1} de ${QUESTIONS.length}`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('progress-label').textContent = `${currentQ + 1} / ${QUESTIONS.length}`;
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn' + (answers[currentQ] === i ? ' selected' : '');
+    btn.innerHTML = `<span class="opt-letter">${LETTERS[i]}</span>${opt}`;
+    btn.onclick = () => selectAnswer(i);
+    grid.appendChild(btn);
+  });
+  document.getElementById('btn-next').style.display = currentQ < QUESTIONS.length - 1 ? 'inline-block' : 'none';
+  document.getElementById('btn-finish').style.display = currentQ === QUESTIONS.length - 1 ? 'inline-block' : 'none';
+  startTimer();
+}
+
+function selectAnswer(i) {
+  answers[currentQ] = i;
+  document.querySelectorAll('.opt-btn').forEach((b, idx) => b.classList.toggle('selected', idx === i));
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  secondsLeft = TIEMPO;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    updateTimerUI();
+    if (secondsLeft <= 0) { clearInterval(timerInterval); autoAdvance(); }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const m = Math.floor(secondsLeft / 60);
+  const s = secondsLeft % 60;
+  document.getElementById('timer-text').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  document.getElementById('timer-bar').style.width = `${(secondsLeft / TIEMPO) * 100}%`;
+}
+
+function autoAdvance() {
+  if (currentQ < QUESTIONS.length - 1) { currentQ++; loadQuestion(); } else { finishQuiz(); }
+}
+
+function nextQuestion() {
+  clearInterval(timerInterval);
+  if (currentQ < QUESTIONS.length - 1) { currentQ++; loadQuestion(); }
+}
+
+async function finishQuiz() {
+  clearInterval(timerInterval);
+  let correct = 0;
+  answers.forEach((a, i) => { if (a === QUESTIONS[i].correct) correct++; });
+  const score = correct * 2;
+  await saveScore(currentGrupo, correct, score, answers);
+  showScreen('screen-result');
+  document.getElementById('result-grupo-title').textContent = `Grupo ${currentGrupo}`;
+  document.getElementById('result-score').textContent = `${score}/20`;
+  document.getElementById('result-detail').textContent = `${correct} de ${QUESTIONS.length} respuestas correctas`;
+}
+
+async function saveScore(grupo, correct, score, userAnswers) {
+  const payload = { grupo, correctas: correct, nota: score, respuestas: userAnswers, timestamp: new Date().toISOString() };
+  try {
+    await fetch(`${FIREBASE_URL}/control5/grupos/grupo${grupo}.json?nocache=${TS}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) { console.error('Firebase error:', e); }
+}
+
+function showScreen(id) {
+  ['screen-select','screen-quiz','screen-result','screen-locked'].forEach(s => {
+    document.getElementById(s).style.display = 'none';
+  });
+  document.getElementById(id).style.display = 'flex';
+}
+
+init();
+</script>
+</body>
+</html>

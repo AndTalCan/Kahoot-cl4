@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Profesor – Control N°5</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d0d1e; color: #fff; min-height: 100vh; padding: 20px; }
+
+  h1 { text-align: center; color: #f7c948; font-size: 1.8rem; margin-bottom: 4px; }
+  .subtitle { text-align: center; color: #aaa; font-size: .95rem; margin-bottom: 24px; }
+
+  .grupos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 1000px; margin: 0 auto 30px auto; }
+  .grupo-card { background: #1c1040; border-radius: 16px; padding: 20px; text-align: center; border: 2px solid #333; transition: border-color .3s; }
+  .grupo-card.done { border-color: #6c3fc5; }
+  .grupo-card.done .card-status { color: #2ecc71; }
+  .grupo-card h3 { font-size: 1.2rem; margin-bottom: 8px; color: #f7c948; }
+  .card-nota { font-size: 2.5rem; font-weight: bold; color: #fff; margin: 8px 0; }
+  .card-status { color: #888; font-size: .9rem; }
+  .card-correctas { color: #aaa; font-size: .85rem; }
+
+  .progress-section { max-width: 1000px; margin: 0 auto 24px auto; background: #1c1040; border-radius: 16px; padding: 16px 20px; }
+  .progress-section h2 { color: #f7c948; font-size: 1rem; margin-bottom: 12px; }
+  .progress-bar-wrap { background: #333; border-radius: 8px; height: 18px; overflow: hidden; }
+  .progress-bar-fill { background: linear-gradient(90deg, #6c3fc5, #f7c948); height: 100%; border-radius: 8px; transition: width .5s; }
+  .progress-text { text-align: right; color: #ccc; font-size: .85rem; margin-top: 6px; }
+
+  .solucionario-section { max-width: 1000px; margin: 0 auto; }
+  .sol-locked { background: #1c1040; border-radius: 16px; padding: 30px; text-align: center; color: #888; }
+  .sol-locked .lock-icon { font-size: 3rem; margin-bottom: 12px; }
+  .sol-locked p { font-size: 1rem; }
+  .sol-unlocked { background: #1c1040; border-radius: 16px; padding: 20px; }
+  .sol-unlocked h2 { color: #f7c948; margin-bottom: 16px; text-align: center; }
+  .sol-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .sol-table th { background: #2a1a60; color: #f7c948; padding: 10px 12px; text-align: left; }
+  .sol-table td { padding: 10px 12px; border-bottom: 1px solid #2a2a4a; vertical-align: top; }
+  .sol-table tr:last-child td { border-bottom: none; }
+  .correct-badge { display: inline-block; background: #1a7a3a; color: #2ecc71; padding: 2px 10px; border-radius: 8px; font-weight: bold; font-size: .85rem; }
+
+  .refresh-row { text-align: center; color: #555; font-size: .8rem; margin-bottom: 16px; }
+  .btn-reveal { background: #e05c2a; border: none; color: #fff; font-size: 1rem; font-weight: bold; padding: 12px 28px; border-radius: 10px; cursor: pointer; margin: 0 auto; display: block; margin-bottom: 20px; }
+  .btn-reveal:hover { background: #f07040; }
+
+  .ranking-section { max-width: 1000px; margin: 20px auto 0 auto; background: #1c1040; border-radius: 16px; padding: 20px; }
+  .ranking-section h2 { color: #f7c948; margin-bottom: 14px; text-align: center; }
+  .ranking-table { width: 100%; border-collapse: collapse; }
+  .ranking-table th { background: #2a1a60; color: #f7c948; padding: 10px; text-align: center; }
+  .ranking-table td { padding: 10px; text-align: center; border-bottom: 1px solid #2a2a4a; }
+  .ranking-table tr:first-child td { color: #f7c948; font-weight: bold; }
+  .pos-1 { color: #f7c948; font-size: 1.3rem; }
+  .pos-2 { color: #bbb; font-size: 1.2rem; }
+  .pos-3 { color: #cd7f32; font-size: 1.1rem; }
+</style>
+</head>
+<body>
+
+<h1>📊 Panel Profesor – Control N° 5</h1>
+<p class="subtitle">Introducción al Derecho · Se actualiza cada 5 segundos</p>
+<p class="refresh-row" id="last-update">Cargando...</p>
+
+<div class="progress-section">
+  <h2>Progreso de grupos</h2>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+  <div class="progress-text" id="progress-text">0 / 6 grupos han terminado</div>
+</div>
+
+<div class="grupos-grid" id="grupos-grid"></div>
+
+<button class="btn-reveal" id="btn-reveal" onclick="forceReveal()" style="display:none">🔓 Revelar solucionario ahora</button>
+
+<div class="solucionario-section" id="solucionario-section">
+  <div class="sol-locked" id="sol-locked">
+    <div class="lock-icon">🔒</div>
+    <p>El solucionario se revelará automáticamente<br>cuando los <strong>6 grupos</strong> hayan completado el control.</p>
+  </div>
+  <div class="sol-unlocked" id="sol-unlocked" style="display:none">
+    <h2>✅ Solucionario – Control N° 5</h2>
+    <table class="sol-table" id="sol-table"></table>
+  </div>
+</div>
+
+<div class="ranking-section" id="ranking-section" style="display:none">
+  <h2>🏆 Ranking de Grupos</h2>
+  <table class="ranking-table" id="ranking-table"></table>
+</div>
+
+<script>
+const FIREBASE_URL = "https://kahoot-cl4-default-rtdb.firebaseio.com";
+const TS = () => Date.now() % 100000;
+let revealed = false;
+
+const QUESTIONS = [
+  { text: "¿Cómo se ejercía el poder en la Antigüedad?", opts: ["Basado en la estructura política de Estados y alianzas.","Por quienes obtenían una combinación de talento personal y acumulación de fuerza social en un momento determinado.","Por medio de un sistema de elecciones democráticas.","Ninguna de las anteriores."], correct: 1 },
+  { text: "La diferencia principal entre Estado y Gobierno es que:", opts: ["El Gobierno es una estructura permanente y el Estado una temporal.","El Estado tiene un conjunto de órganos, normas y principios, que trascienden gobiernos y épocas; mientras que el Gobierno es la capacidad de mando, volátil y por la simple fuerza.","No hay diferencia.","Ninguna de las anteriores."], correct: 1 },
+  { text: "¿Qué papel tuvo la Iglesia en el Medioevo?", opts: ["La Iglesia se ocupó de regular únicamente a la comunidad católica.","Desarrolló un derecho canónico con influencia en diversos aspectos temporales, actuando como guía espiritual.","No influyó en las reglas sociales.","Fue opositora al sistema feudal."], correct: 1 },
+  { text: "¿Por qué se afirma que en el Medioevo se sentaron las bases de los Estados Nación?", opts: ["Por la consolidación del poder feudal.","Por la centralización del poder en la Iglesia.","Por la progresiva diferenciación entre los pueblos por su propia cultura, surgiendo las identidades nacionales.","Porque no hubo ningún tipo de estructura política clara."], correct: 2 },
+  { text: "La Carta Magna fue relevante porque:", opts: ["Estableció un sistema de leyes absolutas.","Permitió que el rey dictara leyes sin restricciones.","Sentó las bases de la protección judicial de la libertad personal, determinando que la ley estaba sobre el rey y éste aceptaba ciertas reglas de gobierno.","Todas las anteriores."], correct: 2 },
+  { text: "La importancia de Montesquieu radica en:", opts: ["Su rechazo a cualquier forma de separación de poderes.","Su influencia en la centralización del poder estatal.","La formulación de la teoría de la separación de poderes.","Las ideas revolucionarias plasmadas en su obra \"El Contrato Social\"."], correct: 2 },
+  { text: "Rousseau contribuyó al Estado contemporáneo al plantear:", opts: ["La abolición de la democracia representativa.","La idea del contrato social y la soberanía popular.","La centralización del poder en un monarca absoluto.","La promoción de la representación democrática del pueblo, a partir de su obra \"Del Espíritu de las Leyes\"."], correct: 1 },
+  { text: "El Tercer Estado, según el Conde de Sieyes, era importante porque:", opts: ["Representaba a la aristocracia.","Representaba una estructura estatal y política diversa, cercana a la monarquía.","Constituía la mayor parte de la nación y sostenía su vida económica.","Fue creado para fortalecer el régimen presidencialista."], correct: 2 },
+  { text: "La Declaración de Derechos del Hombre y del Ciudadano estableció:", opts: ["La limitación de libertades para la clase baja.","Los principios liberales de libertad, igualdad, seguridad, resistencia a la opresión y propiedad.","Un régimen autoritario.","Una serie de principios liberales vinculados exclusivamente con las tareas del Ejecutivo y Legislativo, como centros de poder."], correct: 1 },
+  { text: "En Estados Unidos, la Constitución de 1787 tuvo dos aportes fundamentales:", opts: ["Fue la base para un gobierno monárquico y diseñó un régimen descentralizado.","El de la estructura del Estado Federal y el régimen presidencial.","Eliminó cualquier tipo de control judicial y otorgó al Presidente poderes ilimitados.","Regular las relaciones comerciales y las divisiones políticas entre/de los Estados Federados."], correct: 1 }
+];
+const LETTERS = ['a','b','c','d'];
+
+async function fetchData() {
+  try {
+    const r = await fetch(`${FIREBASE_URL}/control5/grupos.json?nocache=${TS()}`);
+    const data = await r.json();
+    return data || {};
+  } catch(e) { return {}; }
+}
+
+async function refresh() {
+  const data = await fetchData();
+  const now = new Date();
+  document.getElementById('last-update').textContent = `Última actualización: ${now.toLocaleTimeString('es-PE')}`;
+
+  let doneCount = 0;
+  const grid = document.getElementById('grupos-grid');
+  grid.innerHTML = '';
+
+  for (let g = 1; g <= 6; g++) {
+    const gdata = data[`grupo${g}`];
+    const card = document.createElement('div');
+    card.className = `grupo-card${gdata ? ' done' : ''}`;
+
+    if (gdata) {
+      doneCount++;
+      card.innerHTML = `
+        <h3>Grupo ${g}</h3>
+        <div class="card-nota">${gdata.nota}/20</div>
+        <div class="card-correctas">${gdata.correctas} / 10 correctas</div>
+        <div class="card-status">✅ Completado</div>
+      `;
+    } else {
+      card.innerHTML = `
+        <h3>Grupo ${g}</h3>
+        <div class="card-nota" style="color:#555">—</div>
+        <div class="card-status">⏳ Pendiente</div>
+      `;
+    }
+    grid.appendChild(card);
+  }
+
+  // Barra de progreso
+  document.getElementById('progress-fill').style.width = `${(doneCount/6)*100}%`;
+  document.getElementById('progress-text').textContent = `${doneCount} / 6 grupos han terminado`;
+
+  // Botón revelar manual si al menos 1 completó
+  if (doneCount > 0 && !revealed) {
+    document.getElementById('btn-reveal').style.display = 'block';
+  }
+
+  // Auto-revelar cuando los 6 terminen
+  if (doneCount === 6 && !revealed) {
+    showSolucionario(data);
+  }
+
+  // Ranking si hay datos
+  if (doneCount > 0) {
+    showRanking(data);
+  }
+}
+
+function showSolucionario(data) {
+  revealed = true;
+  document.getElementById('sol-locked').style.display = 'none';
+  document.getElementById('btn-reveal').style.display = 'none';
+  document.getElementById('sol-unlocked').style.display = 'block';
+
+  const table = document.getElementById('sol-table');
+  let html = `<tr><th>#</th><th>Pregunta</th><th>Respuesta Correcta</th></tr>`;
+  QUESTIONS.forEach((q, i) => {
+    const ci = q.correct;
+    html += `<tr>
+      <td style="font-weight:bold;color:#f7c948">${i+1}</td>
+      <td>${q.text}</td>
+      <td><span class="correct-badge">(${LETTERS[ci]}) ${q.opts[ci]}</span></td>
+    </tr>`;
+  });
+  table.innerHTML = html;
+
+  showRanking(data);
+}
+
+function showRanking(data) {
+  const grupos = [];
+  for (let g = 1; g <= 6; g++) {
+    const d = data[`grupo${g}`];
+    if (d) grupos.push({ grupo: g, nota: d.nota, correctas: d.correctas });
+  }
+  grupos.sort((a, b) => b.nota - a.nota);
+
+  const section = document.getElementById('ranking-section');
+  section.style.display = 'block';
+  const rt = document.getElementById('ranking-table');
+  const medals = ['🥇','🥈','🥉'];
+  let html = `<tr><th>Pos.</th><th>Grupo</th><th>Nota</th><th>Correctas</th></tr>`;
+  grupos.forEach((g, i) => {
+    const pos = medals[i] || `${i+1}°`;
+    html += `<tr><td>${pos}</td><td>Grupo ${g.grupo}</td><td><strong>${g.nota}/20</strong></td><td>${g.correctas}/10</td></tr>`;
+  });
+  rt.innerHTML = html;
+}
+
+function forceReveal() {
+  fetchData().then(data => showSolucionario(data));
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>
